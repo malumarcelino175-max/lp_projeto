@@ -1,0 +1,116 @@
+{% extends "lp/base.html" %}
+
+{% block titulo %}Detalhes do produto — LP Suplementos{% endblock %}
+{% block descricao %}Benefícios, tabela nutricional, modo de uso e avaliações do produto na LP Suplementos.{% endblock %}
+
+{% block conteudo %}
+<section class="section">
+  <div class="container">
+    <p class="muted" style="margin-bottom:18px">
+      <a href="{% url 'lp:home' %}">Início</a> / <a href="{% url 'lp:produtos' %}">Produtos</a> /
+      <span id="crumb"></span>
+    </p>
+    <div id="detalhe"></div>
+    <div class="empty" id="nao-encontrado" style="display:none">
+      Produto não encontrado. <a class="btn btn-ghost" href="{% url 'lp:produtos' %}">Voltar ao catálogo</a>
+    </div>
+
+    <div id="relacionados-wrap" style="margin-top:64px;display:none">
+      <h2>Você também pode <span class="gradient-text">gostar</span></h2>
+      <div class="grid grid-4" id="relacionados" style="margin-top:22px"></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // O slug vem da URL do Django: /produtos/<slug>/
+  var slug = "{{ slug|default:'' }}" ||
+             location.pathname.replace(/\/$/, "").split("/").pop();
+  var p = LP.produto(slug);
+  var qtd = 1, sabor = p ? p.sabores[0] : null;
+
+  if (!p) {
+    document.getElementById("nao-encontrado").style.display = "block";
+  } else {
+    document.title = p.nome + " — LP Suplementos";
+    document.getElementById("crumb").textContent = p.nome;
+    var parcela = (p.preco / 3).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    var desconto = p.preco_antigo ? Math.round((1 - p.preco / p.preco_antigo) * 100) : 0;
+
+    document.getElementById("detalhe").innerHTML = `
+      <div class="product-detail">
+        <div class="gallery"><img src="${p.imagem}" alt="${p.nome}"></div>
+        <div>
+          <span class="card-cat">${p.categoria}</span>
+          <h1 style="margin:6px 0 10px">${p.nome}</h1>
+          <div class="stars">${LP.estrelas(p.nota)} <span class="muted">${p.nota} · ${p.avaliacoes} avaliações</span></div>
+          <div class="price" style="margin:18px 0 4px">
+            <strong style="font-size:2rem">${LP.preco(p.preco)}</strong>
+            ${p.preco_antigo ? `<s>${LP.preco(p.preco_antigo)}</s>` : ""}
+            ${desconto ? `<span class="tag" style="position:static">-${desconto}%</span>` : ""}
+          </div>
+          <p class="muted">ou 3x de ${parcela} sem juros</p>
+          <p style="margin:18px 0">${p.descricao}</p>
+
+          <div style="margin:18px 0">
+            <label>Sabor</label>
+            <div class="flavors" id="sabores" style="margin-top:8px">
+              ${p.sabores.map((s, i) => `<button class="chip${i === 0 ? " active" : ""}" data-sabor="${s}">${s}</button>`).join("")}
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:22px 0">
+            <div class="qty">
+              <button id="menos">−</button><span id="qtd">1</span><button id="mais">+</button>
+            </div>
+            <button class="btn btn-primary" id="add">Adicionar ao carrinho</button>
+            <button class="btn btn-red" id="comprar">Comprar agora</button>
+          </div>
+
+          <ul class="list-check" style="margin-top:10px">
+            ${p.beneficios.map(b => `<li>${b}</li>`).join("")}
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid grid-3" style="margin-top:56px">
+        <div class="box">
+          <h3>Tabela nutricional</h3>
+          <table class="nutri" style="margin-top:12px">
+            ${p.nutricao.map(l => `<tr><td>${l[0]}</td><td>${l[1]}</td></tr>`).join("")}
+          </table>
+        </div>
+        <div class="box"><h3>Modo de uso</h3><p class="muted" style="margin-top:10px">${p.uso}</p></div>
+        <div class="box">
+          <h3>Garantias</h3>
+          <ul class="list-check" style="margin-top:10px">
+            <li>Laudo de pureza por lote</li>
+            <li>Frete grátis acima de R$ 200</li>
+            <li>7 dias para troca</li>
+            <li>Compra 100% segura</li>
+          </ul>
+        </div>
+      </div>`;
+
+    document.getElementById("sabores").addEventListener("click", function (e) {
+      var b = e.target.closest(".chip"); if (!b) return;
+      sabor = b.dataset.sabor;
+      this.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === b));
+    });
+    document.getElementById("mais").onclick = () => document.getElementById("qtd").textContent = ++qtd;
+    document.getElementById("menos").onclick = () => { if (qtd > 1) document.getElementById("qtd").textContent = --qtd; };
+    document.getElementById("add").onclick = () => LP.adicionar(p.slug, qtd, sabor);
+    document.getElementById("comprar").onclick = () => {
+      LP.adicionar(p.slug, qtd, sabor);
+      location.href = "{% url 'lp:carrinho' %}";
+    };
+
+    var rel = LP_PRODUTOS.filter(x => x.slug !== p.slug && x.categoria === p.categoria)
+      .concat(LP_PRODUTOS.filter(x => x.slug !== p.slug && x.categoria !== p.categoria)).slice(0, 4);
+    document.getElementById("relacionados").innerHTML = rel.map(LP.cardProduto).join("");
+    document.getElementById("relacionados-wrap").style.display = "block";
+  }
+</script>
+{% endblock %}

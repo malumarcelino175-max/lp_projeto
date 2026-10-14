@@ -1,0 +1,78 @@
+{% extends "lp/base.html" %}
+
+{% block titulo %}Seu carrinho — LP Suplementos{% endblock %}
+{% block descricao %}Revise os itens do seu pedido, ajuste quantidades e finalize a compra na LP Suplementos.{% endblock %}
+
+{% block conteudo %}
+<section class="section">
+  <div class="container">
+    <h1>Seu <span class="gradient-text">carrinho</span></h1>
+    <div class="cart-layout" style="margin-top:26px">
+      <div>
+        <div id="itens"></div>
+        <div class="empty" id="vazio" style="display:none">
+          Seu carrinho está vazio.<br><br>
+          <a class="btn btn-primary" href="{% url 'lp:produtos' %}">Ver produtos</a>
+        </div>
+      </div>
+      <aside class="box summary" id="resumo"></aside>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function render() {
+    var itens = LP.carrinho();
+    var alvo = document.getElementById("itens");
+    document.getElementById("vazio").style.display = itens.length ? "none" : "block";
+    document.getElementById("resumo").style.display = itens.length ? "block" : "none";
+
+    alvo.innerHTML = itens.map(function (i, idx) {
+      var p = LP.produto(i.slug); if (!p) return "";
+      return `<div class="cart-row">
+        <img src="${p.imagem}" alt="${p.nome}">
+        <div>
+          <h3>${p.nome}</h3>
+          <p class="muted" style="font-size:.88rem">${i.sabor ? i.sabor + " · " : ""}${LP.preco(p.preco)} cada</p>
+          <div class="qty" style="margin-top:8px">
+            <button data-menos="${idx}">−</button><span>${i.qtd}</span><button data-mais="${idx}">+</button>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <strong style="color:var(--orange)">${LP.preco(p.preco * i.qtd)}</strong><br>
+          <button class="btn btn-ghost" style="margin-top:10px;padding:6px 14px" data-remover="${idx}">Remover</button>
+        </div>
+      </div>`;
+    }).join("");
+
+    var sub = LP.total();
+    var frete = sub >= 200 || sub === 0 ? 0 : 24.9;
+    document.getElementById("resumo").innerHTML = `
+      <h3>Resumo do pedido</h3>
+      <div class="summary-line"><span>Subtotal</span><span>${LP.preco(sub)}</span></div>
+      <div class="summary-line"><span>Frete</span><span>${frete ? LP.preco(frete) : "Grátis"}</span></div>
+      <div class="summary-total"><span>Total</span><span>${LP.preco(sub + frete)}</span></div>
+      <div class="field" style="margin-top:18px">
+        <label for="cupom">Cupom de desconto</label>
+        <input id="cupom" placeholder="Ex.: LP20">
+      </div>
+      <button class="btn btn-primary btn-block" id="finalizar">Finalizar compra</button>
+      <p class="muted" style="font-size:.82rem;margin-top:12px;text-align:center">Pagamento seguro · 3x sem juros</p>`;
+
+    document.getElementById("finalizar").onclick = function () {
+      LP.toast("Pedido enviado! Em breve você recebe a confirmação por e-mail.");
+    };
+  }
+
+  document.addEventListener("click", function (e) {
+    var t = e.target;
+    if (t.dataset.mais !== undefined) LP.alterarQtd(+t.dataset.mais, 1);
+    else if (t.dataset.menos !== undefined) LP.alterarQtd(+t.dataset.menos, -1);
+    else if (t.dataset.remover !== undefined) LP.remover(+t.dataset.remover);
+  });
+  document.addEventListener("carrinho:mudou", render);
+  render();
+</script>
+{% endblock %}

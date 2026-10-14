@@ -1,0 +1,31 @@
+{% extends "lp/base.html" %}
+
+{% block titulo %}Acesso ao painel — LP Suplementos{% endblock %}
+{% block descricao %}Área restrita da equipe LP Suplementos para gerenciar produtos, preços e promoções.{% endblock %}
+
+{% block conteudo %}
+<section class="section">
+  <div class="container" style="max-width:440px">
+    <div class="box">
+      <h1 style="font-size:2rem">Painel da loja</h1>
+      <p class="muted" style="margin:8px 0 22px">Entre com sua conta de administrador.</p>
+
+      {% if form.errors %}<p style="color:#ff8a8a">Usuário ou senha inválidos.</p>{% endif %}
+
+      <!-- Autenticação real do Django: action="{% url 'lp:login' %}" method="post" -->
+      <form method="post" action="{% url 'lp:login' %}" id="form-login">
+        {% csrf_token %}
+        <div class="field"><label for="username">Usuário ou e-mail</label>
+          <input id="username" name="username" required></div>
+        <div class="field"><label for="password">Senha</label>
+          <input id="password" name="password" type="password" required></div>
+        <button class="btn btn-primary btn-block" type="submit">Entrar</button>
+      </form>
+
+      <p class="muted" style="font-size:.82rem;margin-top:16px;text-align:center">
+        Acesso restrito à equipe da loja.
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

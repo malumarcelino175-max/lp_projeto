@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}LP Suplementos — Suplementos para alta performance{% endblock %}</title>
+  <meta name="description" content="{% block descricao %}Whey, creatina, pré-treino e mais. Suplementos testados em laboratório, entrega rápida e promoções toda semana.{% endblock %}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{% block og_titulo %}LP Suplementos{% endblock %}">
+  <meta property="og:description" content="{% block og_descricao %}Suplementos para alta performance com entrega rápida.{% endblock %}">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'lp/css/style.css' %}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <a class="logo" href="{% url 'lp:home' %}">LP<span>.</span></a>
+      <nav class="nav">
+        <a href="{% url 'lp:home' %}">Início</a>
+        <a href="{% url 'lp:produtos' %}">Produtos</a>
+        <a href="{% url 'lp:sobre' %}">Sobre</a>
+        <a href="{% url 'lp:contato' %}">Contato</a>
+      </nav>
+      <div class="header-actions">
+        <a class="cart-link" href="{% url 'lp:carrinho' %}">Carrinho<span class="cart-count" data-cart-count style="display:none">0</span></a>
+        <a class="btn btn-primary" href="{% url 'lp:produtos' %}">Comprar</a>
+        <button class="menu-toggle" aria-label="Abrir menu">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main>{% block conteudo %}{% endblock %}</main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="logo">LP<span>.</span> SUPLEMENTOS</div>
+          <p class="muted" style="max-width:340px;margin-top:10px">
+            Suplementos testados em laboratório para quem leva o treino a sério.
+            Entrega para todo o Brasil.
+          </p>
+        </div>
+        <div>
+          <h4>Loja</h4>
+          <a href="{% url 'lp:produtos' %}">Todos os produtos</a>
+          <a href="{% url 'lp:carrinho' %}">Carrinho</a>
+          <a href="{% url 'lp:contato' %}">Fale conosco</a>
+        </div>
+        <div>
+          <h4>Empresa</h4>
+          <a href="{% url 'lp:sobre' %}">Sobre nós</a>
+          <a href="{% url 'lp:login' %}">Painel da loja</a>
+        </div>
+      </div>
+      <div class="footer-bottom">© 2026 LP Suplementos. Todos os direitos reservados.</div>
+    </div>
+  </footer>
+
+  <script>
+    window.LP_STATIC = "{% static 'lp/' %}".replace(/lp\/$/, "");
+    window.LP_URL_PRODUTO = "{% url 'lp:produtos' %}";
+  </script>
+  <script src="{% static 'lp/js/dados.js' %}"></script>
+  <script src="{% static 'lp/js/app.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

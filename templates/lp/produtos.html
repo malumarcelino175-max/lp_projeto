@@ -1,0 +1,49 @@
+{% extends "lp/base.html" %}
+
+{% block titulo %}Catálogo de suplementos — LP Suplementos{% endblock %}
+{% block descricao %}Veja todos os suplementos da LP: proteínas, performance, aminoácidos e saúde. Filtre por categoria e compre com desconto.{% endblock %}
+
+{% block conteudo %}
+<section class="section">
+  <div class="container">
+    <h1>Nossos <span class="gradient-text">produtos</span></h1>
+    <p class="muted" style="margin:10px 0 26px">Escolha uma categoria ou busque pelo nome.</p>
+
+    <div class="field" style="max-width:360px">
+      <input type="search" id="busca" placeholder="Buscar produto...">
+    </div>
+
+    <div class="filters" id="filtros"></div>
+    <div class="grid grid-3" id="lista"></div>
+    <div class="empty" id="vazio" style="display:none">Nenhum produto encontrado.</div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var categoriaAtual = "Todos";
+  var categorias = ["Todos"].concat([...new Set(LP_PRODUTOS.map(p => p.categoria))]);
+
+  document.getElementById("filtros").innerHTML = categorias.map(c =>
+    `<button class="chip${c === "Todos" ? " active" : ""}" data-cat="${c}">${c}</button>`).join("");
+
+  function render() {
+    var termo = document.getElementById("busca").value.toLowerCase();
+    var itens = LP_PRODUTOS.filter(p =>
+      (categoriaAtual === "Todos" || p.categoria === categoriaAtual) &&
+      (p.nome.toLowerCase().includes(termo) || p.resumo.toLowerCase().includes(termo)));
+    document.getElementById("lista").innerHTML = itens.map(LP.cardProduto).join("");
+    document.getElementById("vazio").style.display = itens.length ? "none" : "block";
+  }
+
+  document.getElementById("filtros").addEventListener("click", function (e) {
+    var b = e.target.closest(".chip"); if (!b) return;
+    categoriaAtual = b.dataset.cat;
+    document.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === b));
+    render();
+  });
+  document.getElementById("busca").addEventListener("input", render);
+  render();
+</script>
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends "lp/base.html" %}
+
+{% block titulo %}Painel da loja — LP Suplementos{% endblock %}
+{% block descricao %}Cadastre produtos, preços e promoções da LP Suplementos.{% endblock %}
+
+{% block conteudo %}
+<section class="section">
+  <div class="container">
+    <div class="admin-head">
+      <div>
+        <h1>Painel da <span class="gradient-text">loja</span></h1>
+        <p class="muted">Cadastre produtos, preços e promoções.</p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" id="novo">+ Novo produto</button>
+        <a class="btn btn-ghost" href="{% url 'lp:home' %}">Ver loja</a>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-aba="produtos">Produtos</button>
+      <button class="tab" data-aba="promocoes">Promoções</button>
+    </div>
+
+    <div id="aba-produtos">
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Preço antigo</th><th>Status</th><th></th></tr></thead>
+          <tbody id="tbody-produtos"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="aba-promocoes" style="display:none">
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Título</th><th>Descrição</th><th>Cupom</th><th>Status</th><th></th></tr></thead>
+          <tbody id="tbody-promocoes"></tbody>
+        </table>
+      </div>
+      <button class="btn btn-blue" id="nova-promo" style="margin-top:16px">+ Nova promoção</button>
+    </div>
+  </div>
+</section>
+
+<!-- Modal de produto -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <h2 id="modal-titulo">Novo produto</h2>
+    <form id="form-produto" style="margin-top:18px">
+      {% csrf_token %}
+      <input type="hidden" id="f-slug-original">
+      <div class="form-grid">
+        <div class="field"><label for="f-nome">Nome</label><input id="f-nome" required></div>
+        <div class="field"><label for="f-slug">Slug (URL)</label><input id="f-slug" required></div>
+        <div class="field"><label for="f-categoria">Categoria</label>
+          <select id="f-categoria">
+            <option>Proteínas</option><option>Performance</option>
+            <option>Aminoácidos</option><option>Saúde</option>
+          </select></div>
+        <div class="field"><label for="f-imagem">Imagem (arquivo em static/lp/img)</label><input id="f-imagem" placeholder="product-whey.jpg"></div>
+        <div class="field"><label for="f-preco">Preço (R$)</label><input id="f-preco" type="number" step="0.01" required></div>
+        <div class="field"><label for="f-antigo">Preço antigo (R$)</label><input id="f-antigo" type="number" step="0.01"></div>
+      </div>
+      <div class="field"><label for="f-resumo">Resumo</label><input id="f-resumo"></div>
+      <div class="field"><label for="f-descricao">Descrição</label><textarea id="f-descricao" rows="3"></textarea></div>
+      <div class="form-grid">
+        <div class="field"><label for="f-sabores">Sabores (separados por vírgula)</label><input id="f-sabores"></div>
+        <div class="field"><label for="f-beneficios">Benefícios (separados por vírgula)</label><input id="f-beneficios"></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label for="f-destaque">Destaque na home</label>
+          <select id="f-destaque"><option value="sim">Sim</option><option value="nao" selected>Não</option></select></div>
+        <div class="field"><label for="f-uso">Modo de uso</label><input id="f-uso"></div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+        <button type="button" class="btn btn-ghost" id="cancelar">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /* Protótipo de painel: as alterações ficam na memória do navegador.
+     No Django, troque cada ação por um POST para as views correspondentes. */
+  var produtos = LP_PRODUTOS.map(p => Object.assign({ ativo: true }, p));
+  var promocoes = LP_PROMOCOES.map(p => Object.assign({}, p));
+  var modal = document.getElementById("modal");
+
+  function renderProdutos() {
+    document.getElementById("tbody-produtos").innerHTML = produtos.map((p, i) => `
+      <tr>
+        <td style="display:flex;align-items:center;gap:10px">
+          <img src="${p.imagem}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px">
+          ${p.nome}
+        </td>
+        <td class="muted">${p.categoria}</td>
+        <td>${LP.preco(p.preco)}</td>
+        <td class="muted">${p.preco_antigo ? LP.preco(p.preco_antigo) : "—"}</td>
+        <td><span class="pill ${p.ativo ? "on" : "off"}">${p.ativo ? "Ativo" : "Inativo"}</span></td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-ghost" style="padding:6px 12px" data-editar="${i}">Editar</button>
+          <button class="btn btn-ghost" style="padding:6px 12px" data-toggle="${i}">${p.ativo ? "Desativar" : "Ativar"}</button>
+          <button class="btn btn-red" style="padding:6px 12px" data-excluir="${i}">Excluir</button>
+        </td>
+      </tr>`).join("");
+  }
+
+  function renderPromocoes() {
+    document.getElementById("tbody-promocoes").innerHTML = promocoes.map((p, i) => `
+      <tr>
+        <td>${p.titulo}</td>
+        <td class="muted">${p.descricao}</td>
+        <td>${p.cupom ? `<span class="coupon">${p.cupom}</span>` : "—"}</td>
+        <td><span class="pill ${p.ativo ? "on" : "off"}">${p.ativo ? "Ativa" : "Inativa"}</span></td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-ghost" style="padding:6px 12px" data-promo-toggle="${i}">${p.ativo ? "Desativar" : "Ativar"}</button>
+          <button class="btn btn-red" style="padding:6px 12px" data-promo-excluir="${i}">Excluir</button>
+        </td>
+      </tr>`).join("");
+  }
+
+  // abas
+  document.querySelector(".tabs").addEventListener("click", function (e) {
+    var b = e.target.closest(".tab"); if (!b) return;
+    document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === b));
+    document.getElementById("aba-produtos").style.display = b.dataset.aba === "produtos" ? "" : "none";
+    document.getElementById("aba-promocoes").style.display = b.dataset.aba === "promocoes" ? "" : "none";
+  });
+
+  function abrir(indice) {
+    var p = indice != null ? produtos[indice] : null;
+    document.getElementById("modal-titulo").textContent = p ? "Editar produto" : "Novo produto";
+    document.getElementById("f-slug-original").value = indice != null ? indice : "";
+    f("nome", p ? p.nome : ""); f("slug", p ? p.slug : "");
+    document.getElementById("f-categoria").value = p ? p.categoria : "Proteínas";
+    f("imagem", p ? p.imagem.split("/").pop() : "");
+    f("preco", p ? p.preco : ""); f("antigo", p && p.preco_antigo ? p.preco_antigo : "");
+    f("resumo", p ? p.resumo : ""); f("descricao", p ? p.descricao : "");
+    f("sabores", p ? p.sabores.join(", ") : ""); f("beneficios", p ? p.beneficios.join(", ") : "");
+    f("uso", p ? p.uso : "");
+    document.getElementById("f-destaque").value = p && p.destaque ? "sim" : "nao";
+    modal.classList.add("open");
+  }
+  function f(id, v) { document.getElementById("f-" + id).value = v; }
+  function g(id) { return document.getElementById("f-" + id).value.trim(); }
+
+  document.getElementById("novo").onclick = () => abrir(null);
+  document.getElementById("cancelar").onclick = () => modal.classList.remove("open");
+  modal.addEventListener("click", e => { if (e.target === modal) modal.classList.remove("open"); });
+
+  document.getElementById("form-produto").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var idx = document.getElementById("f-slug-original").value;
+    var lista = (s) => s ? s.split(",").map(x => x.trim()).filter(Boolean) : [];
+    var dados = {
+      nome: g("nome"), slug: g("slug"), categoria: document.getElementById("f-categoria").value,
+      imagem: window.LP_STATIC + "lp/img/" + (g("imagem") || "product-whey.jpg"),
+      preco: parseFloat(g("preco")) || 0,
+      preco_antigo: g("antigo") ? parseFloat(g("antigo")) : null,
+      resumo: g("resumo"), descricao: g("descricao"),
+      sabores: lista(g("sabores")).length ? lista(g("sabores")) : ["Sem sabor"],
+      beneficios: lista(g("beneficios")), uso: g("uso"),
+      destaque: document.getElementById("f-destaque").value === "sim",
+      nota: 5, avaliacoes: 0, nutricao: [], ativo: true,
+    };
+    if (idx === "") produtos.push(dados);
+    else produtos[+idx] = Object.assign(produtos[+idx], dados);
+    modal.classList.remove("open");
+    renderProdutos();
+    LP.toast("Produto salvo com sucesso");
+  });
+
+  document.addEventListener("click", function (e) {
+    var d = e.target.dataset || {};
+    if (d.editar !== undefined) abrir(+d.editar);
+    else if (d.toggle !== undefined) { produtos[+d.toggle].ativo = !produtos[+d.toggle].ativo; renderProdutos(); }
+    else if (d.excluir !== undefined) {
+      if (confirm("Excluir este produto?")) { produtos.splice(+d.excluir, 1); renderProdutos(); LP.toast("Produto excluído"); }
+    }
+    else if (d.promoToggle !== undefined) { promocoes[+d.promoToggle].ativo = !promocoes[+d.promoToggle].ativo; renderPromocoes(); }
+    else if (d.promoExcluir !== undefined) { promocoes.splice(+d.promoExcluir, 1); renderPromocoes(); }
+  });
+
+  document.getElementById("nova-promo").onclick = function () {
+    var titulo = prompt("Título da promoção (ex.: 15% OFF)"); if (!titulo) return;
+    var descricao = prompt("Descrição (ex.: em toda a linha de proteínas)") || "";
+    var cupom = prompt("Cupom (opcional)") || null;
+    promocoes.push({ titulo: titulo, descricao: descricao, cupom: cupom, ativo: true });
+    renderPromocoes();
+    LP.toast("Promoção criada");
+  };
+
+  renderProdutos();
+  renderPromocoes();
+</script>
+{% endblock %}

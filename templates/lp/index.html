@@ -1,0 +1,61 @@
+{% extends "lp/base.html" %}
+{% load static %}
+
+{% block titulo %}LP Suplementos — Whey, creatina e pré-treino com entrega rápida{% endblock %}
+{% block descricao %}Suplementos testados em laboratório: whey isolado, creatina, pré-treino, BCAA e multivitamínicos. Promoções semanais e frete grátis acima de R$ 200.{% endblock %}
+
+{% block conteudo %}
+<section class="hero">
+  <div class="hero-bg" style="background-image:url('{% static 'lp/img/hero-supplements.jpg' %}')"></div>
+  <div class="container hero-content">
+    <span class="badge">Alta performance</span>
+    <h1>Combustível para <span class="gradient-text">quem não para</span></h1>
+    <p>Whey isolado, creatina, pré-treino e muito mais. Fórmulas testadas em laboratório,
+       entregues na sua porta em até 3 dias úteis.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{% url 'lp:produtos' %}">Ver produtos</a>
+      <a class="btn btn-ghost" href="#destaques">Mais vendidos</a>
+    </div>
+  </div>
+</section>
+
+<section class="promo-bar" id="promocoes"></section>
+
+<section class="section" id="destaques">
+  <div class="container">
+    <div class="center" style="margin-bottom:34px">
+      <h2>Mais <span class="gradient-text">vendidos</span></h2>
+      <p class="muted">Os favoritos de quem treina com a gente.</p>
+    </div>
+    <div class="grid grid-3" id="destaques-grid"></div>
+    <div class="center" style="margin-top:32px">
+      <a class="btn btn-blue" href="{% url 'lp:produtos' %}">Ver catálogo completo</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background:var(--surface)">
+  <div class="container grid grid-4">
+    <div class="box"><h3>Testado em laboratório</h3><p class="muted">Laudo de pureza em todos os lotes.</p></div>
+    <div class="box"><h3>Entrega rápida</h3><p class="muted">Todo o Brasil em até 3 dias úteis.</p></div>
+    <div class="box"><h3>Frete grátis</h3><p class="muted">Em pedidos acima de R$ 200.</p></div>
+    <div class="box"><h3>Troca garantida</h3><p class="muted">7 dias para trocar ou devolver.</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container center">
+    <h2>Pronto para o <span class="gradient-text">próximo nível</span>?</h2>
+    <p class="muted" style="margin:12px 0 24px">Use o cupom LP20 e ganhe 20% na primeira compra.</p>
+    <a class="btn btn-primary" href="{% url 'lp:produtos' %}">Começar agora</a>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  LP.renderPromocoes("#promocoes");
+  document.getElementById("destaques-grid").innerHTML =
+    LP_PRODUTOS.filter(p => p.destaque).map(LP.cardProduto).join("");
+</script>
+{% endblock %}

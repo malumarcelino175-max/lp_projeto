@@ -9,6 +9,7 @@ ALLOWED_HOSTS = ["*"]
 INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "loja",
+    "users",
 ]
 
 MIDDLEWARE = [
